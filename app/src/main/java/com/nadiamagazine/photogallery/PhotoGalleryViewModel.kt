@@ -13,17 +13,29 @@ class PhotoGalleryViewModel : ViewModel() {
     private val photoRepository = PhotoRepository()
     private val _galleryItems: MutableStateFlow<List<GalleryItem>> =
         MutableStateFlow(emptyList())
+
     val galleryItems: StateFlow<List<GalleryItem>>
         get() = _galleryItems.asStateFlow()
     init {
         viewModelScope.launch {
             try {
-                val items = photoRepository.fetchPhotos()
-                Log.d(TAG, "Items received: $items")
+                val items = fetchGalleryItems("planets")
                 _galleryItems.value = items
             } catch (ex: Exception) {
                 Log.e(TAG, "Failed to fetch gallery items", ex)
             }
+        }
+    }
+
+    fun setQuery(query: String) {
+        viewModelScope.launch { _galleryItems.value = fetchGalleryItems(query) }
+    }
+
+    private suspend fun fetchGalleryItems(query: String): List<GalleryItem> {
+        return if (query.isNotEmpty()) {
+            photoRepository.searchPhotos(query)
+        } else {
+            photoRepository.fetchPhotos()
         }
     }
 }
