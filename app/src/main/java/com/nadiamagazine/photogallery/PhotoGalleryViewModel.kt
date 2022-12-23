@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 private const val TAG = "PhotoGalleryViewModel"
+
 class PhotoGalleryViewModel : ViewModel() {
     private val photoRepository = PhotoRepository()
     private val preferencesRepository = PreferencesRepository.get()
@@ -32,10 +33,23 @@ class PhotoGalleryViewModel : ViewModel() {
                 }
             }
         }
+
+        viewModelScope.launch {
+            preferencesRepository.isPolling.collect { isPolling ->
+                _uiState.update { it.copy(isPolling = isPolling) }
+            }
+        }
     }
+
 
     fun setQuery(query: String) {
         viewModelScope.launch { preferencesRepository.setStoredQuery(query) }
+    }
+
+    fun toggleIsPolling() {
+        viewModelScope.launch {
+            preferencesRepository.setPolling(!uiState.value.isPolling)
+        }
     }
 
     private suspend fun fetchGalleryItems(query: String): List<GalleryItem> {
@@ -50,4 +64,5 @@ class PhotoGalleryViewModel : ViewModel() {
 data class PhotoGalleryUiState(
     val images: List<GalleryItem> = listOf(),
     val query: String = "",
+    val isPolling: Boolean = false,
 )
